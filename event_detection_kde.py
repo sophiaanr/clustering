@@ -124,12 +124,12 @@ DATA = np.array([-52, -47, -23, -16, -1, 4, 6, 15, 16,
 
 def load_data(fpath):
     with h5py.File(fpath, 'r') as f:
-        times = f['time'][600000:700000]
-        mrr_flags = f['mrr_flag'][600000:700000]
-        cl_flags = f['cl61_flag'][600000:700000]
+        times = f['time'][100000:400000]
+        mrr_flags = f['mrr_flag'][100000:400000]
+        cl_flags = f['cl61_flag'][100000:400000]
 
     # convert unixtime to datetime - it may just be more beneficial to cluster in unixtime rather than datetime.
-    times = times * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z')
+    # times = times * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z')
 
     # replace -1 values with 0 because they are considered 'true' in logical and
     mrr_flags = np.where(mrr_flags == np.int64(-1), None, mrr_flags)
@@ -137,10 +137,7 @@ def load_data(fpath):
     flag_indices = np.where(np.logical_or(mrr_flags, cl_flags))
     times_flags = times[flag_indices]
 
-    print(times.shape)
-    print(times[0], times[-1])
-    print(mrr_flags[0], mrr_flags[-1])
-    print(cl_flags[0], cl_flags[-1])
+    print(times_flags[0], times_flags[-1])
 
     return times_flags
 
@@ -161,15 +158,15 @@ def gen_synth_data():
     return times
 
 
-def KDE_clustering(synth_data):
+def KDE_clustering():
     # Get the synthetic data
-    # synth_data = DATA
+    synth_data = DATA
     # Show the synthetic data
     plt.scatter(synth_data, np.ones(synth_data.shape[0]) * 5, s=5)
-    plt.show(block=False)
+    # plt.show(block=False)
     # matplotlib.pyplot.clf()
 
-    print(synth_data)
+    # print(synth_data)
 
     # Do the kernel density estimation
     # params = {"bandwidth": numpy.logspace(-2, 0.5, 20)}
@@ -178,10 +175,10 @@ def KDE_clustering(synth_data):
 
     # print("best bandwidth: {0}".format(grid.best_estimator_.bandwidth))
 
-    kde = sklearn.neighbors.KernelDensity(kernel="gaussian", bandwidth=3.).fit(synth_data.reshape(-1, 1))
+    kde = sklearn.neighbors.KernelDensity(kernel="gaussian", bandwidth=3).fit(synth_data.reshape(-1, 1))
     # kde = grid.best_estimator_
 
-    s = np.linspace(0, 10000)
+    s = np.linspace(0, 5000)
     e = kde.score_samples(s.reshape(-1, 1))
     idx_min = scipy.signal.argrelextrema(e, np.less)[0]
     idx_max = scipy.signal.argrelextrema(e, np.greater)[0]
@@ -230,51 +227,10 @@ def KMeans_clustering():
     plt.show()
 
 
-# https://www.reneshbedre.com/blog/dbscan-python.html
-def dbscan_clustering(data):
-    # data = DATA
-    # data = gen_synth_data()
-    X = data.reshape(-1, 1)
 
-    # compute epsilon: look at the 'knee' of the graph to find the best epsilon point
-    # n_neighbors = 5 as neighbors function returns distance of point to itself (i.e. first column will be zeros)
-    nbrs = NearestNeighbors(n_neighbors=4).fit(X)
-    # Find the k-neighbors of a point
-    neigh_dist, neigh_ind = nbrs.kneighbors(X)
-    # sort the neighbor distances (lengths to points) in ascending order
-    # axis = 0 represents sort along first axis i.e. sort along row
-    sort_neigh_dist = np.sort(neigh_dist, axis=0)
-    k_dist = sort_neigh_dist[:, 3]
-    plt.plot(k_dist)
-    plt.axhline(y=400, linewidth=1, linestyle='dashed', color='k')
-    plt.ylabel("k-NN distance")
-    plt.xlabel("Sorted observations (2th NN)")
-    plt.show()
-
-    # min_samples should be as small as possible: typically 2 * number of dimensions.
-
-    dbscan = DBSCAN(eps=400, min_samples=3)
-    model = dbscan.fit(X)
-    labels = model.labels_
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-    n_noise_ = list(labels).count(-1)
-
-    print(labels)
-    print(f'estimated number of clusters: {n_clusters_}')
-    print(f'estimated number of noise points: {n_noise_}')
-    unique_labels = set(labels)
-    print(f'unique labels: {unique_labels}')
-    print(f'Points per cluster: {Counter(labels)}')
-
-    data = {'x': data, 'y': np.ones(data.shape[0]) * 5}
-    df = pd.DataFrame(data)
-    p = sns.scatterplot(data=df, x="x", y="y", hue=labels, legend="full", palette="bright")
-    sns.move_legend(p, "upper right", bbox_to_anchor=(1.1, 1.2), title='Clusters')
-    plt.show()
 
 
 if __name__ == '__main__':
     times_data = load_data('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5')
-    # KDE_clustering()
+    KDE_clustering()
     # KMeans_clustering()
-    dbscan_clustering(times_data)
