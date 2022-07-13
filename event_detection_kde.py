@@ -124,9 +124,9 @@ DATA = np.array([-52, -47, -23, -16, -1, 4, 6, 15, 16,
 
 def load_data(fpath):
     with h5py.File(fpath, 'r') as f:
-        times = f['time'][600000:610000]
-        mrr_flags = f['mrr_flag'][600000:610000]
-        cl_flags = f['cl61_flag'][600000:610000]
+        times = f['time'][600000:700000]
+        mrr_flags = f['mrr_flag'][600000:700000]
+        cl_flags = f['cl61_flag'][600000:700000]
 
     # convert unixtime to datetime - it may just be more beneficial to cluster in unixtime rather than datetime.
     times = times * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z')
@@ -137,8 +137,10 @@ def load_data(fpath):
     flag_indices = np.where(np.logical_or(mrr_flags, cl_flags))
     times_flags = times[flag_indices]
 
-    for i in range(len(times_flags)):
-        print(times_flags[i], mrr_flags[flag_indices][i], cl_flags[flag_indices][i])
+    print(times.shape)
+    print(times[0], times[-1])
+    print(mrr_flags[0], mrr_flags[-1])
+    print(cl_flags[0], cl_flags[-1])
 
     return times_flags
 
@@ -159,9 +161,9 @@ def gen_synth_data():
     return times
 
 
-def KDE_clustering():
+def KDE_clustering(synth_data):
     # Get the synthetic data
-    synth_data = DATA
+    # synth_data = DATA
     # Show the synthetic data
     plt.scatter(synth_data, np.ones(synth_data.shape[0]) * 5, s=5)
     plt.show(block=False)
@@ -198,7 +200,7 @@ def KMeans_clustering():
     X = data.reshape(-1, 1)
 
     sum_of_squared_distances = []
-    K = range(1, 50)
+    K = range(1, 100)
     for k in K:
         km = KMeans(n_clusters=k)
         km = km.fit(X)
@@ -210,7 +212,7 @@ def KMeans_clustering():
     plt.title('Elbow Method For Optimal k')
     plt.show()
 
-    kmeans = KMeans(n_clusters=6, n_init=50)
+    kmeans = KMeans(n_clusters=6, n_init=10)
     a = kmeans.fit(X)
     labels = kmeans.labels_
     centroids = kmeans.cluster_centers_
@@ -229,29 +231,29 @@ def KMeans_clustering():
 
 
 # https://www.reneshbedre.com/blog/dbscan-python.html
-def dbscan_clustering():
-    data = DATA
+def dbscan_clustering(data):
+    # data = DATA
     # data = gen_synth_data()
     X = data.reshape(-1, 1)
 
     # compute epsilon: look at the 'knee' of the graph to find the best epsilon point
     # n_neighbors = 5 as neighbors function returns distance of point to itself (i.e. first column will be zeros)
-    nbrs = NearestNeighbors(n_neighbors=3).fit(X)
+    nbrs = NearestNeighbors(n_neighbors=4).fit(X)
     # Find the k-neighbors of a point
     neigh_dist, neigh_ind = nbrs.kneighbors(X)
     # sort the neighbor distances (lengths to points) in ascending order
     # axis = 0 represents sort along first axis i.e. sort along row
     sort_neigh_dist = np.sort(neigh_dist, axis=0)
-    k_dist = sort_neigh_dist[:, 2]
+    k_dist = sort_neigh_dist[:, 3]
     plt.plot(k_dist)
-    plt.axhline(y=24, linewidth=1, linestyle='dashed', color='k')
+    plt.axhline(y=400, linewidth=1, linestyle='dashed', color='k')
     plt.ylabel("k-NN distance")
     plt.xlabel("Sorted observations (2th NN)")
     plt.show()
 
     # min_samples should be as small as possible: typically 2 * number of dimensions.
 
-    dbscan = DBSCAN(eps=24, min_samples=2)
+    dbscan = DBSCAN(eps=400, min_samples=3)
     model = dbscan.fit(X)
     labels = model.labels_
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -272,7 +274,7 @@ def dbscan_clustering():
 
 
 if __name__ == '__main__':
-    load_data('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5')
+    times_data = load_data('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5')
     # KDE_clustering()
     # KMeans_clustering()
-    # dbscan_clustering()
+    dbscan_clustering(times_data)
