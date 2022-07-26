@@ -14,10 +14,11 @@ from IPython.display import display
 
 
 def main():
-    time_flags = load_data('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5')
+    time_flags = load_data('/Users/sophiareiner/PycharmProjects/blizex_tools/blizex_tools/example_analyses/event_detection/event_data/detection_flags_mrr_bin5_cl61_bin6_pip_2022-07-26_REDONE.h5')
     print('time arr len: ', time_flags.shape)
-    # redo_csv('redone_events_1550_3.csv')
+    # redo_csv('REDONE_snow_events_400_3.csv')
     dbscan_clustering(time_flags)
+    # compute_elbow(time_flags)
     # iter_dbscan(time_flags)
 
 
@@ -60,7 +61,7 @@ def compute_elbow(data):
     sort_neigh_dist = np.sort(neigh_dist, axis=0)
     k_dist = sort_neigh_dist[:, 3]
     plt.plot(k_dist)
-    plt.axhline(y=400, linewidth=1, linestyle='dashed', color='k')
+    plt.axhline(y=900, linewidth=1, linestyle='dashed', color='k')
     plt.ylabel("k-NN distance")
     plt.xlabel("Sorted observations (2th NN)")
     plt.show()
@@ -72,7 +73,7 @@ def dbscan_clustering(data):
     # data = gen_synth_data()
     X = data.reshape(-1, 1)
 
-    dbscan = DBSCAN(eps=1550, min_samples=3)
+    dbscan = DBSCAN(eps=1200, min_samples=2)
     model = dbscan.fit(X)
     labels = model.labels_
     n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -89,14 +90,14 @@ def dbscan_clustering(data):
     data = data * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z')
 
     # create csv of detected events
-    # eval_events(labels, n_clusters_, data, 'snow_events_1550_1.csv')
+    eval_events(labels, n_clusters_, data, 'snow_events_1200_2.csv')
 
-    data = {'x': data, 'y': np.ones(data.shape[0]) * 5}
-    df = pd.DataFrame(data)
+    # data = {'x': data, 'y': np.ones(data.shape[0]) * 5}
+    # df = pd.DataFrame(data)
 
-    p = sns.scatterplot(data=df, x="x", y="y", hue=labels, legend="full", palette="bright")
-    sns.move_legend(p, "upper right", bbox_to_anchor=(1.1, 1.2), title='Clusters')
-    plt.show()
+    # p = sns.scatterplot(data=df, x="x", y="y", hue=labels, legend="full", palette="bright")
+    # sns.move_legend(p, "upper right", bbox_to_anchor=(1.1, 1.2), title='Clusters')
+    # plt.show()
     # print(metrics.silhouette_score(X, labels))  # takes a long time for a lot of data.
 
 
@@ -128,7 +129,7 @@ def eval_events(labels: np.ndarray, num_clusters: int, times: np.ndarray, f_out=
 
 def redo_csv(fpath):
     rows = []
-    with open('redone_events_1550_3.csv') as f:
+    with open(fpath) as f:
         csvreader = csv.reader(f)
         next(csvreader)
         for r in csvreader:
@@ -153,7 +154,7 @@ def redo_csv(fpath):
 
         row = f'{i} {t_start} {t_end} {duration_h:.3f} {gap_h:.3f}'
         xr.append(row.split())
-    write_csv(xr, 'rewritten_redone_events_1550_3.csv')
+    write_csv(xr, 'REWRITTEN_REDONE_snow_events_400_3.csv')
 
 
 if __name__ == '__main__':

@@ -126,6 +126,7 @@ DATA = np.array([-52, -47, -23, -16, -1, 4, 6, 15, 16,
 def main():
     times_data = load_data('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5')
     timelinebar()
+    # histogram()
 
 
 def load_data(fpath):
@@ -235,11 +236,12 @@ def write_csv(data, fpath_out='test.csv'):
         writer.writerow(['id', 'start_time', 'end_time', 'duration_hr', 'gap_hr'])
         writer.writerows(data)
 
+
 def timelinebar():
     fig, ax = plt.subplots()
 
     rows = []
-    with open('snow_events_1550_3.csv') as f:
+    with open('snow_events_400_3.csv') as f:
         csvreader = csv.reader(f)
         next(csvreader)
         for r in csvreader:
@@ -249,10 +251,10 @@ def timelinebar():
     for row in rows:
         xranges.append((pd.to_datetime(row[1]), pd.to_datetime(row[2]) - pd.to_datetime(row[1])))
 
-    ax.broken_barh(xranges, [6, 3], facecolor='red')
+    ax.broken_barh(xranges, [3, 3], facecolor='blue')
 
     rows = []
-    with open('redone_events_1550_3.csv') as f:
+    with open('aggregated_snow_events_400_3.csv') as f:
         csvreader = csv.reader(f)
         next(csvreader)
         for r in csvreader:
@@ -261,11 +263,24 @@ def timelinebar():
     xranges = []
     for row in rows:
         xranges.append((pd.to_datetime(row[1]), pd.to_datetime(row[2]) - pd.to_datetime(row[1])))
+    ax.broken_barh(xranges, [6, 3], facecolor='orange')
 
-    ax.broken_barh(xranges, [9, 3], facecolor='blue')
 
     rows = []
-    with open('redone2_events_1550_3.csv') as f:
+    with open('invalid_data_csv/REWRITTEN_REDONE_snow_events_400_3.csv') as f:
+        csvreader = csv.reader(f)
+        next(csvreader)
+        for r in csvreader:
+            rows.append(r)
+
+    xranges = []
+    for row in rows:
+        xranges.append((pd.to_datetime(row[1]), pd.to_datetime(row[2]) - pd.to_datetime(row[1])))
+    ax.broken_barh(xranges, [9, 3], facecolor='teal')
+
+
+    rows = []
+    with open('aggregated_snow_events_800_2.csv') as f:
         csvreader = csv.reader(f)
         next(csvreader)
         for r in csvreader:
@@ -275,15 +290,61 @@ def timelinebar():
     for row in rows:
         xranges.append((pd.to_datetime(row[1]), pd.to_datetime(row[2]) - pd.to_datetime(row[1])))
 
-    ax.broken_barh(xranges, [12, 3], facecolor='teal')
+    ax.broken_barh(xranges, [12, 3], facecolor='red')
 
-    ax.set_yticklabels(['DBSCAN 3', 'DBSCAN redone', 'DBSCAN redone2'])
-    ax.set_yticks([7, 10, 13])
+    rows = []
+    with open('snow_events_1200_3.csv') as f:
+        csvreader = csv.reader(f)
+        next(csvreader)
+        for r in csvreader:
+            rows.append(r)
+
+    xranges = []
+    for row in rows:
+        xranges.append((pd.to_datetime(row[1]), pd.to_datetime(row[2]) - pd.to_datetime(row[1])))
+
+    ax.broken_barh(xranges, [15, 3], facecolor='purple')
+
+    ax.set_yticklabels(['new_data_400', 'aggregated_400', 'redone', 'agg_800', '1200_3'])
+    ax.set_yticks([4, 7, 10, 13, 16])
     ax.set_ylim(0, 24)
+
+    plt.show()
+
+
+def histogram():
+    rows = []
+    with open('/Users/sophiareiner/Desktop/copy_redone_snow_events_400_3.csv') as f:
+        csvreader = csv.reader(f)
+        next(csvreader)
+        for r in csvreader:
+            rows.append(r)
+
+    duration_h = [float(row[3]) for row in rows]
+    print(len(duration_h))
+    fig, ax = plt.subplots(2, 1)
+    fig.tight_layout
+
+    bins = np.arange(0, 60, 0.25)
+    ax[0].hist(duration_h, bins, color='teal')
+    ax[0].set_title('re clustered data')
+    ax[0].set_ylim([0, 450])
+
+    rows = []
+    with open('dbscan_csv/snow_events_400_3.csv') as f:
+        csvreader = csv.reader(f)
+        next(csvreader)
+        for r in csvreader:
+            rows.append(r)
+
+    duration_h = [float(row[3]) for row in rows]
+    print(len(duration_h))
+    ax[1].hist(duration_h, bins, color='blue')
+    ax[1].set_title('orig data')
+    ax[1].set_ylim([0, 450])
 
     plt.show()
 
 
 if __name__ == '__main__':
     main()
-
