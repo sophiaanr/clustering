@@ -1,3 +1,7 @@
+"""
+An attempt at kernel density estimation on actual flag data
+"""
+
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.signal import argrelextrema
@@ -16,6 +20,11 @@ def main():
 
 
 def estimate_bandwidth(data):
+    """
+    Estimate optimal bandwidth
+    the optimal bandwidth came out to be between 3300 and 3400, however
+    this seemed too small to me. resulted in too many clusters.
+    """
     X = data.reshape(-1, 1)
     bandwidth = np.arange(3300, 3400, 20)
     kde = KernelDensity(kernel='gaussian')
@@ -25,19 +34,24 @@ def estimate_bandwidth(data):
     print(kde.bandwidth)
 
 
-# find better way to convert unixtime to datetime
 def kde_clustering(data):
+    """
+    attempt kernel density estimation and write into csv file
+    I was unsure how to define "s" because it was unclear how it changed
+    the resulting clusters
+    """
     X = data.reshape(-1, 1)
     plt.scatter(data, np.ones(data.shape[0]) * -13.5, s=1)
-    kde = KernelDensity(kernel='gaussian', bandwidth=3385.5)  # bandwidth calculated from all the data I think??
+    kde = KernelDensity(kernel='gaussian', bandwidth=5000)  # bandwidth calculated from all the data I think??
     kde.fit(X)
 
+    fpath_out = 'kde_events_5000.csv'
     # arrange times from start time to end time, with gap of 4hours
     s = np.arange(1639416510, 1652170150 + 5400, 5400)  # what does this do????  1640251340 1643243120
     e = kde.score_samples(s.reshape(-1, 1))
 
-    plt.plot(s, e)
-    plt.show()
+    # plt.plot(s, e)
+    # plt.show()
 
     mi, ma = argrelextrema(e, np.less)[0], argrelextrema(e, np.greater)[0]
 
@@ -58,7 +72,6 @@ def kde_clustering(data):
     # labels.append(list(np.ones(len(cluster)) * (len(mi))))
     # print(f'{cluster[0]} {cluster[-1]} {np.int64(np.timedelta64(cluster[-1]-cluster[0], "s")) / 3600:.3f}')
 
-
     rows = []
     for i in range(len(events)):
         t_start = events[i][0]
@@ -76,7 +89,7 @@ def kde_clustering(data):
 
         row = f'{i} {t_start} {t_end} {duration_h:.3f} {gap_h:.3f}'
         rows.append(row.split())
-    write_csv(rows, 'event_kde_bdw3385.5_2.csv')
+    write_csv(rows, fpath_out)
 
     # labels = [int(x) for xs in labels for x in xs]  # convert list of lists to flat list
     data = {'x': data[:10000] * np.timedelta64(1, 's') + np.datetime64('1970-01-01T00:00:00Z'),
@@ -84,9 +97,9 @@ def kde_clustering(data):
     df = pd.DataFrame(data)
 
     # something wrong here... the label length doesn't match the data length
-    p = sns.scatterplot(data=df, x="x", y="y", hue=labels[:10000], legend="full", palette="bright")
-    sns.move_legend(p, "upper right", bbox_to_anchor=(1.1, 1.2), title='Clusters')
-    plt.show()
+    # p = sns.scatterplot(data=df, x="x", y="y", hue=labels[:10000], legend="full", palette="bright")
+    # sns.move_legend(p, "upper right", bbox_to_anchor=(1.1, 1.2), title='Clusters')
+    # plt.show()
 
 
 if __name__ == '__main__':

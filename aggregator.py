@@ -11,10 +11,14 @@
 # to change (see the example code below after the aggregate() routine)
 
 # Norm Wood, norman.wood@ssec.wisc.edu
-
+import h5py
 import numpy
 
 from event_detection import write_csv
+
+
+def unix_to_datetime64(unix_time):
+    return unix_time * numpy.timedelta64(1, 's') + numpy.datetime64('1970-01-01T00:00:00Z')
 
 
 def main():
@@ -24,12 +28,19 @@ def main():
     t_start_list = []
     t_end_list = []
 
-    for line in lines[1:]:
-        parts = line.split(',')
-        t_start_list.append(numpy.datetime64(parts[1]))
-        t_end_list.append(numpy.datetime64(parts[2]))
+    # for line in lines[1:]:
+    #     parts = line.split(',')
+    #     t_start_list.append(numpy.datetime64(parts[1]))
+    #     t_end_list.append(numpy.datetime64(parts[2]))
+
+    with h5py.File('detection_flags_mrr_bin5_m12_cl61_bin6_m6.h5') as f:
+        time = f['time'][:]
+
+    t_start_list = unix_to_datetime64(time[:-1])
+    t_end_list = [x + numpy.timedelta64(10, 's') for x in t_start_list]
 
     time_data = numpy.array([t_start_list, t_end_list])
+
     N_data = time_data.shape[1]
     dt_gap_thresh = numpy.timedelta64(5400, 's')
     dt_duration_min = numpy.timedelta64(1800, 's')
@@ -49,7 +60,7 @@ def main():
 
     durations = time_data[1, :] - time_data[0, :]
 
-    rows = []
+    # rows = []
     for idx in range(N_data_current):
         if idx < N_data_current - 1:
             gap = (time_data[0, idx + 1] - time_data[1, idx]) / numpy.timedelta64(3600, 's')
@@ -57,11 +68,12 @@ def main():
             gap = -999.
 
         row = f'{idx} {time_data[0, idx]} {time_data[1, idx]} {durations[idx] / numpy.timedelta64(3600, "s"):.3f} {gap:.3f}'
-        rows.append(row.split())
+        print(row)
+        # rows.append(row.split())
         # print('%4d %s %s %12.3f %12.3f' % (
         #     idx, time_data[0, idx], time_data[1, idx], durations[idx] / numpy.timedelta64(3600, 's'), gap))
-    f_out = 'aggregated_snow_events_800_2.csv'
-    write_csv(rows, f_out)
+    # f_out = 'aggregated_snow_events_800_2.csv'
+    # write_csv(rows, f_out)
 
 
 def aggregate(time_data, dt_gap_thresh, dt_duration_min):
